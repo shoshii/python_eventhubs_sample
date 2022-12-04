@@ -29,6 +29,28 @@ def send_event_data_batch():
     event_data_batch.add(EventData('{"Rows": [{"name": "Alice", "uid": 1}]}'))
     event_data_batch.add(EventData('{"Rows": [{"name": "Bob", "uid": 2}]}'))
     producer.send_batch(event_data_batch)
+    """
+    /*
+                steps at ADX:
+
+                .create table RawTable (Rows: dynamic)
+
+                .create table RawTable ingestion json mapping 'TestMapping' '[{"column":"Rows", "Properties": {"Path": "$.Rows"}}]'
+
+                .create table TargetTable (id: int, name: string)
+
+                .create function TestExpand() {
+                    RawTable
+                    | mv-expand event = Rows
+                    | project
+                        name = tostring(event['name']),
+                        uid = toint(event['uid'])
+                }
+
+                .alter table TargetTable policy update @'[{"Source": "RawTable", "Query": "TestExpand()", "IsEnabled": "True", "IsTransactional": true}]'
+
+                */
+    """
 
 #loop = asyncio.get_event_loop()
 #loop.run_until_complete(run())
